@@ -296,8 +296,6 @@ let battleAlive = false;
 let audioCtx = null;
 let hideSongAns = false;
 let drumPulse = false;
-let girlVoice = null;
-let girlVoiceReady = false;
 /** per-animal pet+feed count this session */
 let interactCount = {};
 /** random threshold 3–6 before animal offers 比賽 */
@@ -410,44 +408,81 @@ function sfxGift() {
 function sfxTick() { beep(300, .06, 'square'); }
 function sfxDrum() { beep(140, .1, 'triangle'); }
 
-function ensureGirlVoice() {
-  try {
-    if (!window.speechSynthesis) return;
-    const pick = () => {
-      const voices = speechSynthesis.getVoices() || [];
-      if (!voices.length) return;
-      const nameHint = /girl|female|woman|feminine|mei-?jia|meijia|sin-?ji|sinji|ting-?ting|xiao(xiao|yi|yan)|yaoyao|huihui|hanhan|susan|kathy|linda|hana|nanami|kyoko|microsoft.*(xiao|hui|han|yao|tracey|sinji)/i;
-      const zh = voices.filter(v => /zh|cmn|yue|chinese|cantonese|國語|粵/i.test((v.lang || '') + ' ' + (v.name || '')));
-      const pool = zh.length ? zh : voices;
-      let best = pool.find(v => /zh-HK|zh_HK|yue/i.test(v.lang) && nameHint.test(v.name));
-      if (!best) best = pool.find(v => /zh-TW|zh_TW/i.test(v.lang) && nameHint.test(v.name));
-      if (!best) best = pool.find(v => /zh-CN|zh_CN|cmn/i.test(v.lang) && nameHint.test(v.name));
-      if (!best) best = pool.find(v => nameHint.test(v.name));
-      if (!best) best = pool.find(v => /zh-HK|zh_HK|yue/i.test(v.lang));
-      if (!best) best = pool.find(v => /zh/i.test(v.lang));
-      if (best) { girlVoice = best; girlVoiceReady = true; }
-    };
-    pick();
-    if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
-      speechSynthesis.onvoiceschanged = pick;
-    }
-  } catch (e) {}
+/** 粵語／香港語音（唔用普通話／國語聲線） */
+function isCantoneseVoice(v) {
+  if (!v) return false;
+  const lang = String(v.lang || '').toLowerCase().replace(/_/g, '-');
+  const name = String(v.name || '');
+  const nameL = name.toLowerCase();
+  if (/^zh-hk\b|^zh-yue\b|^yue\b/.test(lang)) return true;
+  if (/sinji|hiugaai|hiumaan|yunjie|cantonese|hong\s*kong|粵語|粤语|香港/.test(nameL) || /粵語|粤语|香港/.test(name)) return true;
+  return false;
 }
-ensureGirlVoice();
+
+function isMandarinLeaningVoice(v) {
+  if (!v || isCantoneseVoice(v)) return false;
+  const lang = String(v.lang || '').toLowerCase().replace(/_/g, '-');
+  const nameL = String(v.name || '').toLowerCase();
+  if (/^zh-cn\b|^zh-tw\b|^zh-sg\b|^cmn\b/.test(lang)) return true;
+  if (/mandarin|putonghua|chinese\s*\(china\)|chinese\s*\(taiwan\)|普通話|普通话|國語|国语/.test(nameL)) return true;
+  if (/^zh\b/.test(lang)) return true;
+  return false;
+}
+
+function isGirlishCantoneseVoice(v) {
+  const nameL = String(v.name || '').toLowerCase();
+  // Apple／系統常見港女聲；其餘睇 female／girl 標記
+  if (/sinji|hiugaai|hiumaan|yunjie/.test(nameL)) return true;
+  if (/female|girl|woman|女士|女聲|女声/.test(nameL)) return true;
+  return false;
+}
+
+function pickCantoneseVoice() {
+  if (!window.speechSynthesis) return null;
+  const voices = speechSynthesis.getVoices() || [];
+  if (!voices.length) return null;
+  const yue = voices.filter(isCantoneseVoice);
+  if (!yue.length) return null; // 有聲線清單但冇粵語 → 唔好用普通話頂替
+  const girls = yue.filter(isGirlishCantoneseVoice);
+  const pool = girls.length ? girls : yue;
+  const preferLang = pool.find(v => /^zh-hk/i.test(String(v.lang || '').replace(/_/g, '-')))
+    || pool.find(v => /zh-yue|^yue/i.test(String(v.lang || '').replace(/_/g, '-')));
+  return preferLang || pool[0];
+}
+
+function cantoneseUtteranceLang(voice) {
+  if (voice && /zh-yue|^yue/i.test(String(voice.lang || '').replace(/_/g, '-'))) return 'zh-yue';
+  return 'zh-HK';
+}
 
 function speak(text) {
   try {
     if (!window.speechSynthesis) return;
-    ensureGirlVoice();
     speechSynthesis.cancel();
+    const voices = speechSynthesis.getVoices() || [];
+    // 聲線已載入但冇粵語／港語 → 寧願靜音，唔好用普通話朗讀
+    if (voices.length && !voices.some(isCantoneseVoice)) return;
+    const voice = pickCantoneseVoice();
     const u = new SpeechSynthesisUtterance(String(text));
-    u.lang = (girlVoice && girlVoice.lang) || 'zh-HK';
-    if (girlVoice) u.voice = girlVoice;
-    u.rate = .88;
-    u.pitch = 1.45;
+    u.lang = cantoneseUtteranceLang(voice);
+    u.rate = .85;
+    u.pitch = 1.45; // 女聲／偏高，只喺粵語聲線上用
+    if (voice) {
+      u.voice = voice;
+      // 明確拒絕普通話聲線（防護）
+      if (isMandarinLeaningVoice(voice)) return;
+    }
     speechSynthesis.speak(u);
   } catch (e) {}
 }
+
+// Chrome 等瀏覽器要等 voiceschanged 先有完整清單
+try {
+  if (window.speechSynthesis) {
+    speechSynthesis.getVoices();
+    speechSynthesis.addEventListener('voiceschanged', () => { speechSynthesis.getVoices(); });
+  }
+} catch (e) {}
 
 /**
  * Animal cry sources (trimmed mono MP3 data URIs):
@@ -869,7 +904,7 @@ function renderHome() {
   app.innerHTML = `
     ${heroHeader('我是你的好朋友！點我可以換角色。乘法表攞滿三顆星，就可以識新朋友啦！')}
     <div class="card">
-      <h2 class="mb">選一個乘法表</h2>
+      <h2 class="mb">揀一個乘法表</h2>
       <div class="grid4">${tables}</div>
     </div>
     <div class="card">
@@ -895,7 +930,7 @@ function renderHero() {
   const app = document.getElementById('app');
   let cells = '';
   HEROES.forEach(h => {
-    cells += `<button type="button" class="hero-btn ${h===save.hero?'selected':''}" data-hero="${h}" aria-label="選擇角色 ${h}">${h}</button>`;
+    cells += `<button type="button" class="hero-btn ${h===save.hero?'selected':''}" data-hero="${h}" aria-label="揀角色 ${h}">${h}</button>`;
   });
   app.innerHTML = `
     <div class="card">
