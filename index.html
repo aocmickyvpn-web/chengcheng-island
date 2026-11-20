@@ -281,9 +281,25 @@ let screen = 'home';
 let timers = [];
 let battleAlive = false;
 let audioCtx = null;
-let fed = 0;
 let hideSongAns = false;
 let drumPulse = false;
+
+function zooFromStars() {
+  let n = 0;
+  for (let t = 2; t <= 9; t++) {
+    if ((save.stars[t] || 0) === 3) n++;
+  }
+  return Math.min(10, 1 + n);
+}
+
+function syncZooFromStars() {
+  const next = zooFromStars();
+  if (save.zoo !== next) {
+    save.zoo = next;
+    persist();
+  }
+  return save.zoo;
+}
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -310,11 +326,14 @@ function loadSave() {
       save.gifts = Array.isArray(save.gifts) ? save.gifts : [];
     }
   } catch (e) { save = defaultSave(); }
-  save.zoo = Math.max(1, Math.min(10, Number(save.zoo) || 1));
+  save.stars = Object.assign({}, save.stars || {});
+  const loadedZoo = Math.max(1, Math.min(10, Number(save.zoo) || 1));
+  save.zoo = zooFromStars();
   save.earned = Math.max(Number(save.earned) || 0, Number(save.hearts) || 0);
   save.hearts = Number(save.hearts) || 0;
   save.best = Number(save.best) || 0;
   if (!HEROES.includes(save.hero)) save.hero = '🐙';
+  if (save.zoo !== loadedZoo) persist();
 }
 
 function persist() {
@@ -722,6 +741,7 @@ function heroHeader(extraHtml) {
 
 function renderHome() {
   daily();
+  syncZooFromStars();
   const app = document.getElementById('app');
   let zooHtml = '';
   for (let i=0;i<10;i++) {
@@ -734,14 +754,18 @@ function renderHome() {
     const stars = s ? '★'.repeat(s) : '☆';
     tables += `<button type="button" class="table-btn" data-go="practice" data-t="${t}" aria-label="${t} 的乘法表"><span>${t}</span><span class="stars">${stars}</span></button>`;
   }
+  const friendHint = save.zoo < 10
+    ? '乘法表攞到 ★★★，就可以識多一位新朋友呀！'
+    : '你已經識晒小島上嘅朋友啦！';
   app.innerHTML = `
-    ${heroHeader()}
+    ${heroHeader('我是你的好朋友！點我可以換角色。乘法表攞滿三顆星，就可以識新朋友啦！')}
     <div class="card">
       <h2 class="mb">選一個乘法表</h2>
       <div class="grid4">${tables}</div>
     </div>
     <div class="card">
       <h2 class="mb">我的小動物朋友 ${save.zoo}/10</h2>
+      <p class="muted mb">${friendHint}</p>
       <div class="grid5 mb">${zooHtml}</div>
       <button type="button" class="pri block" data-go="island">🏝️ 去動物小島玩</button>
     </div>
@@ -782,7 +806,6 @@ function renderHero() {
 }
 
 function renderPractice(t) {
-  fed = 0;
   let q = 0, ok = 0, lastA = -1;
   const state = { firstTry: true, answered: false };
 
@@ -862,14 +885,6 @@ function renderPractice(t) {
       const hero = document.querySelector('.hero-btn');
       if (hero) { hero.classList.remove('hop'); void hero.offsetWidth; hero.classList.add('hop'); }
       speak('好好吃！答對了！');
-      fed++;
-      if (fed % 5 === 0 && save.zoo < 10) {
-        save.zoo++;
-        persist();
-        sfxFriend();
-        const ni = save.zoo - 1;
-        modal('新朋友加入小島了！', animalSVG(ni, 90));
-      }
       later(() => { q++; draw(); }, 900);
     } else {
       btn.classList.add('bad-btn', 'shake');
@@ -894,18 +909,29 @@ function renderResult(t, ok) {
   else if (ok >= 6) stars = 2;
   else if (ok >= 3) stars = 1;
   const prev = save.stars[t] || 0;
-  if (stars > prev) { save.stars[t] = stars; persist(); }
+  const prevZoo = save.zoo;
+  if (stars > prev) save.stars[t] = stars;
+  save.zoo = zooFromStars();
+  persist();
+  if (stars === 3 && prev < 3 && save.zoo > prevZoo) {
+    sfxFriend();
+    modal('新朋友加入小島了！', animalSVG(save.zoo - 1, 90));
+  }
   qp('round');
   let msg = '繼續加油，乘乘陪你練習！';
   if (stars === 3) msg = '你是乘法小天才！';
   else if (stars === 2) msg = '很厲害，再挑戰一次拿三顆星！';
   const starShow = stars ? '★'.repeat(stars) : '🌱';
+  const tip = stars === 3
+    ? '三顆星滿星！新朋友會嚟小島搵你玩啦！'
+    : '攞滿三顆星，就可以識多一位新朋友呀！';
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="card center">
       <div style="font-size:2.4rem;margin:8px 0">${starShow}</div>
       <h2>${esc(msg)}</h2>
       <p class="mt">一次就答對 ${ok} / 10 題</p>
+      <p class="muted mt">${tip}</p>
       <div class="grid2 mt">
         <button type="button" class="pri" data-go="practice" data-t="${t}">再玩一次</button>
         <button type="button" data-go="home">回首頁</button>
@@ -915,6 +941,7 @@ function renderResult(t, ok) {
 }
 
 function renderIsland() {
+  syncZooFromStars();
   const app = document.getElementById('app');
   let animals = '';
   for (let i=0;i<save.zoo;i++) {
@@ -930,6 +957,9 @@ function renderIsland() {
     if (!d) return '';
     return `<span class="island-deco" style="left:${d.l};top:${d.t};font-size:1.8rem">${d.e}</span>`;
   }).join('');
+  const islandHint = save.zoo < 10
+    ? '點一隻動物來玩玩吧！想識新朋友？返去練習，攞滿三顆星就得啦！'
+    : '點一隻動物來玩玩吧！小島朋友都到齊啦！';
 
   app.innerHTML = `
     ${heroHeader(`❤️ <span id="hearts-num">${save.hearts}</span>　　🎁 <span id="gift-prog">${save.earned % 10}</span> / 10 顆愛心送禮物`)}
@@ -938,7 +968,7 @@ function renderIsland() {
       <button type="button" id="btn-shop">🛒 裝飾店</button>
       <button type="button" id="btn-gifts">🎁 禮物箱（${save.gifts.length}）</button>
     </div>
-    <div class="card panel-card" id="panel"><p class="muted center">點一隻動物來玩玩吧！</p></div>
+    <div class="card panel-card" id="panel"><p class="muted center">${islandHint}</p></div>
     ${backHomeBtn()}`;
 
   bindNav(app);
