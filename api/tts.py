@@ -46,6 +46,21 @@ class handler(BaseHTTPRequestHandler):
         self._cors()
         self.end_headers()
 
+    def do_HEAD(self):  # noqa: N802
+        # Probes (curl -I) should not 501; body omitted.
+        qs = parse_qs(urlparse(self.path).query)
+        text = _clean_text(qs.get("text", [""])[0])
+        if not text:
+            self.send_response(204)
+            self._cors()
+            self.end_headers()
+            return
+        self.send_response(200)
+        self._cors()
+        self.send_header("Content-Type", "audio/mpeg")
+        self.send_header("X-TTS-Voice", VOICE)
+        self.end_headers()
+
     def do_GET(self):  # noqa: N802
         qs = parse_qs(urlparse(self.path).query)
         text = _clean_text(qs.get("text", [""])[0])
