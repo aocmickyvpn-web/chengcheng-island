@@ -303,6 +303,10 @@ let interactGoal = {};
 /** true while animal offered 比賽 and kid has not finished one yet */
 let challengeOffer = {};
 let cryAudio = null;
+/** edge-tts (zh-HK-HiuMaanNeural) playback — not browser speechSynthesis */
+let ttsAudio = null;
+let ttsAbort = null;
+const ttsCache = new Map(); // text -> object URL
 
 function zooFromStars() {
   let n = 0;
@@ -361,9 +365,17 @@ function persist() {
   catch (e) { /* keep running */ }
 }
 
+function stopTts() {
+  try { if (ttsAbort) ttsAbort.abort(); } catch (e) {}
+  ttsAbort = null;
+  try { if (ttsAudio) { ttsAudio.pause(); ttsAudio.removeAttribute('src'); ttsAudio.load(); } } catch (e) {}
+  ttsAudio = null;
+}
+
 function clearTimers() {
   timers.forEach(t => { clearTimeout(t); clearInterval(t); });
   timers = [];
+  stopTts();
   try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
   try { if (cryAudio) cryAudio.pause(); } catch (e) {}
   battleAlive = false;
@@ -408,81 +420,52 @@ function sfxGift() {
 function sfxTick() { beep(300, .06, 'square'); }
 function sfxDrum() { beep(140, .1, 'triangle'); }
 
-/** 粵語／香港語音（唔用普通話／國語聲線） */
-function isCantoneseVoice(v) {
-  if (!v) return false;
-  const lang = String(v.lang || '').toLowerCase().replace(/_/g, '-');
-  const name = String(v.name || '');
-  const nameL = name.toLowerCase();
-  if (/^zh-hk\b|^zh-yue\b|^yue\b/.test(lang)) return true;
-  if (/sinji|hiugaai|hiumaan|yunjie|cantonese|hong\s*kong|粵語|粤语|香港/.test(nameL) || /粵語|粤语|香港/.test(name)) return true;
-  return false;
-}
-
-function isMandarinLeaningVoice(v) {
-  if (!v || isCantoneseVoice(v)) return false;
-  const lang = String(v.lang || '').toLowerCase().replace(/_/g, '-');
-  const nameL = String(v.name || '').toLowerCase();
-  if (/^zh-cn\b|^zh-tw\b|^zh-sg\b|^cmn\b/.test(lang)) return true;
-  if (/mandarin|putonghua|chinese\s*\(china\)|chinese\s*\(taiwan\)|普通話|普通话|國語|国语/.test(nameL)) return true;
-  if (/^zh\b/.test(lang)) return true;
-  return false;
-}
-
-function isGirlishCantoneseVoice(v) {
-  const nameL = String(v.name || '').toLowerCase();
-  // Apple／系統常見港女聲；其餘睇 female／girl 標記
-  if (/sinji|hiugaai|hiumaan|yunjie/.test(nameL)) return true;
-  if (/female|girl|woman|女士|女聲|女声/.test(nameL)) return true;
-  return false;
-}
-
-function pickCantoneseVoice() {
-  if (!window.speechSynthesis) return null;
-  const voices = speechSynthesis.getVoices() || [];
-  if (!voices.length) return null;
-  const yue = voices.filter(isCantoneseVoice);
-  if (!yue.length) return null; // 有聲線清單但冇粵語 → 唔好用普通話頂替
-  const girls = yue.filter(isGirlishCantoneseVoice);
-  const pool = girls.length ? girls : yue;
-  const preferLang = pool.find(v => /^zh-hk/i.test(String(v.lang || '').replace(/_/g, '-')))
-    || pool.find(v => /zh-yue|^yue/i.test(String(v.lang || '').replace(/_/g, '-')));
-  return preferLang || pool[0];
-}
-
-function cantoneseUtteranceLang(voice) {
-  if (voice && /zh-yue|^yue/i.test(String(voice.lang || '').replace(/_/g, '-'))) return 'zh-yue';
-  return 'zh-HK';
-}
-
+/**
+ * TTS：edge-tts Microsoft HiuMaan（zh-HK-HiuMaanNeural），經 /api/tts。
+ * 失敗或離線時安靜略過，唔再用 browser speechSynthesis／普通話聲線。
+ */
 function speak(text) {
-  try {
-    if (!window.speechSynthesis) return;
-    speechSynthesis.cancel();
-    const voices = speechSynthesis.getVoices() || [];
-    // 聲線已載入但冇粵語／港語 → 寧願靜音，唔好用普通話朗讀
-    if (voices.length && !voices.some(isCantoneseVoice)) return;
-    const voice = pickCantoneseVoice();
-    const u = new SpeechSynthesisUtterance(String(text));
-    u.lang = cantoneseUtteranceLang(voice);
-    u.rate = .85;
-    u.pitch = 1.45; // 女聲／偏高，只喺粵語聲線上用
-    if (voice) {
-      u.voice = voice;
-      // 明確拒絕普通話聲線（防護）
-      if (isMandarinLeaningVoice(voice)) return;
-    }
-    speechSynthesis.speak(u);
-  } catch (e) {}
-}
-
-// Chrome 等瀏覽器要等 voiceschanged 先有完整清單
-try {
-  if (window.speechSynthesis) {
-    speechSynthesis.getVoices();
-    speechSynthesis.addEventListener('voiceschanged', () => { speechSynthesis.getVoices(); });
+  const raw = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
+  if (!raw) return;
+  stopTts();
+  const key = raw.slice(0, 180);
+  const playUrl = (url) => {
+    try {
+      const a = new Audio(url);
+      ttsAudio = a;
+      a.volume = 1;
+      const p = a.play();
+      if (p && typeof p.catch === 'function') p.catch(function () {});
+    } catch (e) {}
+  };
+  if (ttsCache.has(key)) {
+    playUrl(ttsCache.get(key));
+    return;
   }
-} catch (e) {}
+  const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  ttsAbort = ac;
+  const q = '/api/tts?text=' + encodeURIComponent(key);
+  fetch(q, { signal: ac ? ac.signal : undefined, headers: { Accept: 'audio/mpeg' } })
+    .then(function (r) {
+      if (!r || !r.ok) return null;
+      const ct = (r.headers.get('content-type') || '');
+      if (ct.indexOf('audio') === -1 && r.status === 204) return null;
+      return r.blob();
+    })
+    .then(function (blob) {
+      if (!blob || !blob.size) return;
+      if (ttsAbort !== ac) return; // superseded
+      const url = URL.createObjectURL(blob);
+      if (ttsCache.size > 80) {
+        const first = ttsCache.keys().next().value;
+        try { URL.revokeObjectURL(ttsCache.get(first)); } catch (e) {}
+        ttsCache.delete(first);
+      }
+      ttsCache.set(key, url);
+      playUrl(url);
+    })
+    .catch(function () { /* soft fail */ });
+}
 
 /**
  * Animal cry sources (trimmed mono MP3 data URIs):
@@ -1615,7 +1598,7 @@ function renderSong(t) {
 
   function stopSong() {
     playing = false;
-    try { speechSynthesis.cancel(); } catch(e){}
+    stopTts();
     // keep idx
     clearTimers();
   }
