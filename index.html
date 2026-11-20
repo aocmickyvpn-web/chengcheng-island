@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>乘乘小島</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #cfefff;
+  --card: #fff;
+  --ink: #1d2b53;
+  --mute: #5b6b94;
+  --pri: #ff8f1f;
+  --ok: #2fb67c;
+  --bad: #e8506e;
+  --line: #1d2b53;
+  --grass: #8fd96a;
+  --grass-edge: #5bb845;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14203f;
+    --card: #22335f;
+    --ink: #f4f7ff;
+    --mute: #a9b8e0;
+    --line: #0a1328;
+    --grass: #3d6b3a;
+    --grass-edge: #2a4a28;
+  }
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; min-height: 100%;
+  background: var(--bg); color: var(--ink);
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  padding: calc(12px + var(--safe-t)) calc(12px + var(--safe-r)) calc(16px + var(--safe-b)) calc(12px + var(--safe-l));
+}
+#app {
+  max-width: 480px; margin: 0 auto; width: 100%;
+}
+h1, h2, h3, .fw9 { font-weight: 900; }
+.card {
+  background: var(--card); border: 3px solid var(--line);
+  border-radius: 22px; padding: 16px; margin-bottom: 14px;
+}
+.row { display: flex; align-items: center; gap: 10px; }
+.gap { gap: 10px; }
+.wrap { flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.center { justify-content: center; text-align: center; }
+.muted { color: var(--mute); }
+.small { font-size: .88rem; }
+.tiny { font-size: .78rem; }
+.grow { flex: 1; }
+.mt { margin-top: 12px; }
+.mb { margin-bottom: 10px; }
+.speech {
+  background: var(--card); border: 3px solid var(--line);
+  border-radius: 16px; padding: 10px 12px; flex: 1;
+  position: relative; font-size: .92rem; line-height: 1.35;
+}
+.speech::before {
+  content: ""; position: absolute; left: -10px; top: 16px;
+  border: 6px solid transparent; border-right-color: var(--line);
+}
+.hero-btn {
+  font-size: 2.2rem; line-height: 1; min-width: 56px; min-height: 56px;
+  padding: 4px 8px; border-radius: 16px;
+}
+button {
+  font-family: inherit; font-weight: 900; color: var(--ink);
+  background: var(--card); border: 3px solid var(--line);
+  border-bottom-width: 7px; border-radius: 16px;
+  min-height: 56px; padding: 10px 14px; cursor: pointer;
+  font-size: 1rem; line-height: 1.2;
+  transition: transform .08s, border-bottom-width .08s;
+}
+button:focus-visible {
+  outline: 3px solid var(--pri); outline-offset: 2px;
+}
+button:active:not(:disabled) {
+  transform: translateY(3px); border-bottom-width: 4px;
+}
+button:disabled { opacity: .55; cursor: default; }
+button.pri { background: var(--pri); color: #fff; }
+button.ok-btn { background: var(--ok); color: #fff; }
+button.bad-btn { background: var(--bad); color: #fff; }
+button.ghost { background: transparent; }
+button.block { width: 100%; }
+button.selected { background: var(--pri); color: #fff; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.grid5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.zoo-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  border: 3px dashed var(--line); border-radius: 14px; background: var(--bg);
+  min-height: 56px; font-size: 1.4rem;
+}
+.zoo-cell.unlocked { border-style: solid; background: var(--card); }
+.table-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; }
+.table-btn .stars { color: var(--pri); font-size: .85rem; letter-spacing: 1px; }
+.bar {
+  height: 14px; background: var(--bg); border: 3px solid var(--line);
+  border-radius: 999px; overflow: hidden; margin: 8px 0;
+}
+.bar > i {
+  display: block; height: 100%; width: 0%; background: var(--pri);
+  transition: width .25s;
+}
+.plates {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0;
+}
+.plate {
+  width: 72px; min-height: 72px; border: 3px solid var(--line);
+  border-radius: 50%; background: #fff8e8; display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: center; padding: 6px; gap: 2px;
+}
+@media (prefers-color-scheme: dark) {
+  .plate { background: #3a2f1f; }
+}
+.plate span { font-size: 1rem; line-height: 1; }
+.q-big { font-size: 2rem; font-weight: 900; text-align: center; margin: 12px 0; }
+.hint { color: var(--mute); text-align: center; margin-top: 8px; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+@keyframes hop {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes bob {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-48px) scale(1.3); }
+}
+@keyframes drumBeat {
+  0%,100% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+}
+.shake { animation: shake .3s; }
+.hop { animation: hop .35s; }
+.bob { animation: bob 1.4s ease-in-out infinite; }
+.float-heart {
+  position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+  font-size: 1.4rem; pointer-events: none; animation: floatUp .9s forwards; z-index: 5;
+}
+.island {
+  position: relative; height: min(72vh, 560px); min-height: 440px;
+  border: 4px solid var(--line);
+  border-radius: 28px; background: var(--grass); overflow: hidden; margin-bottom: 12px;
+}
+.island-deco {
+  position: absolute; font-size: 1.6rem; z-index: 1; pointer-events: none;
+}
+.animal-btn {
+  position: absolute; z-index: 2; padding: 0; min-height: 0; min-width: 0;
+  background: transparent; border: none; border-bottom-width: 0;
+  transition: left 2s, top 2s; width: 66px; height: 72px;
+}
+.animal-btn:active { transform: none; }
+.animal-btn .bob-wrap { display: block; animation: bob 1.4s ease-in-out infinite; }
+.panel-card { margin-top: 12px; }
+.song-line {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border: 3px solid var(--line); border-radius: 14px;
+  margin-bottom: 8px; background: var(--card); gap: 10px;
+}
+.song-line.active { background: var(--pri); color: #fff; }
+.song-line.done { opacity: .7; }
+.song-line .lyric { transition: opacity .2s; }
+.song-line.hide-ans .lyric { opacity: 0; }
+.song-line.hide-ans.active .lyric,
+.song-line.hide-ans.done .lyric { opacity: 1; }
+.vid-wrap {
+  position: relative; width: 100%; padding-top: 56.25%;
+  border: 3px solid var(--line); border-radius: 16px; overflow: hidden; background: #000;
+}
+.vid-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.stat-bar {
+  height: 18px; border: 2px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg); flex: 1;
+}
+.stat-bar > i { display: block; height: 100%; }
+.stat-bar.red > i { background: var(--bad); }
+.stat-bar.orange > i { background: var(--pri); }
+.stat-bar.green > i { background: var(--ok); }
+#modal {
+  display: none; position: fixed; inset: 0; z-index: 100;
+  background: rgba(10, 16, 32, .62);
+  align-items: center; justify-content: center; padding: 20px;
+}
+#modal.show { display: flex; }
+#modal .modal-card {
+  background: var(--card); border: 3px solid var(--line);
+  border-radius: 22px; padding: 22px; max-width: 360px; width: 100%;
+  text-align: center;
+}
+#modal .modal-emoji { font-size: 3rem; margin-bottom: 8px; }
+input[type="text"], input[type="number"] {
+  font-family: inherit; font-size: 1.1rem; font-weight: 500;
+  border: 3px solid var(--line); border-radius: 14px;
+  padding: 12px 14px; width: 100%; min-height: 56px;
+  background: var(--card); color: var(--ink);
+}
+a.link { color: var(--pri); font-weight: 900; word-break: break-all; }
+.vs-score { font-size: 1.6rem; font-weight: 900; }
+.timer-bar { height: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important; transition: none !important;
+  }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></div>
+<script>
+(function () {
+'use strict';
+
+const STORAGE_KEY = 'chengcheng';
+const HEROES = ['🐙','🐱','🐶','🐰','🦊','🐼','🦁','🐸'];
+const TREATS = ['🍎','🍪','🍓','🐟','⭐','🍩'];
+const ANIMAL_NAMES = ['小汪','咪咪','跳跳','圓圓','火火','呱呱','吱吱','小獅','虎虎','企企'];
+const ANIMAL_SOUNDS = ['汪汪！','喵～','蹦蹦！','嗚～','嘰！','呱呱！','吱吱！','嗷～','嗷嗚！','啾啾！'];
+const GIFTS = ['🌻','🐚','🪁','🧸','🍭','🎈','🔮','🪅','🍀','💎'];
+const DECOS = [
+  {e:'🏠',c:8,l:'38%',t:'2%'},
+  {e:'⛲',c:12,l:'2%',t:'42%'},
+  {e:'🌈',c:15,l:'18%',t:'1%'},
+  {e:'🎠',c:20,l:'84%',t:'42%'},
+  {e:'🎪',c:25,l:'60%',t:'2%'},
+  {e:'🎡',c:30,l:'46%',t:'70%'},
+  {e:'🪨',c:5,l:'40%',t:'82%'},
+  {e:'🪴',c:6,l:'28%',t:'58%'},
+  {e:'🦋',c:9,l:'52%',t:'14%'},
+  {e:'🪺',c:11,l:'64%',t:'54%'},
+  {e:'⛱️',c:14,l:'88%',t:'20%'},
+  {e:'⛺',c:18,l:'10%',t:'30%'},
+  {e:'🦩',c:22,l:'22%',t:'78%'},
+  {e:'🛶',c:24,l:'74%',t:'80%'},
+  {e:'🌉',c:28,l:'32%',t:'46%'},
+  {e:'🏰',c:35,l:'50%',t:'36%'}
+];
+const FIXED_DECOS = [
+  {e:'🌴',l:'4%',t:'6%'},
+  {e:'🌳',l:'78%',t:'8%'},
+  {e:'🌸',l:'8%',t:'72%'},
+  {e:'🍄',l:'70%',t:'68%'}
+];
+const WIN_LINES = ['哇，你太厲害了！我認輸啦！','你算得好快，我要多練習了！'];
+const DRAW_LINES = ['平手！我們都很棒！','再比一場，看誰更快！'];
+const LOSE_LINES = ['別灰心，你已經很棒了，再來一次！','我只是運氣好，下次你一定能贏我！','你的乘法越來越快了，我們再比一場吧！'];
+const D = '一二三四五六七八九';
+
+const defaultSave = () => ({
+  zoo: 1, stars: {}, hero: '🐙', hearts: 0, earned: 0,
+  names: {}, decos: [], gifts: [], stat: {}, miss: {}, vids: {},
+  best: 0, day: { d:'', streak:0, p:{round:0,play:0,song:0}, c:{}, signed:false }
+});
+
+let save = defaultSave();
+let screen = 'home';
+let timers = [];
+let battleAlive = false;
+let audioCtx = null;
+let fed = 0;
+let hideSongAns = false;
+let drumPulse = false;
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function loadSave() {
+  const base = defaultSave();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      save = Object.assign(base, parsed || {});
+      save.day = Object.assign(defaultSave().day, (parsed && parsed.day) || {});
+      save.day.p = Object.assign({round:0,play:0,song:0}, (save.day && save.day.p) || {});
+      save.day.c = Object.assign({}, (save.day && save.day.c) || {});
+      save.stars = Object.assign({}, save.stars || {});
+      save.names = Object.assign({}, save.names || {});
+      save.stat = Object.assign({}, save.stat || {});
+      save.miss = Object.assign({}, save.miss || {});
+      save.vids = Object.assign({}, save.vids || {});
+      save.decos = Array.isArray(save.decos) ? save.decos : [];
+      save.gifts = Array.isArray(save.gifts) ? save.gifts : [];
+    }
+  } catch (e) { save = defaultSave(); }
+  save.zoo = Math.max(1, Math.min(10, Number(save.zoo) || 1));
+  save.earned = Math.max(Number(save.earned) || 0, Number(save.hearts) || 0);
+  save.hearts = Number(save.hearts) || 0;
+  save.best = Number(save.best) || 0;
+  if (!HEROES.includes(save.hero)) save.hero = '🐙';
+}
+
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(save)); }
+  catch (e) { /* keep running */ }
+}
+
+function clearTimers() {
+  timers.forEach(t => { clearTimeout(t); clearInterval(t); });
+  timers = [];
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  battleAlive = false;
+}
+
+function later(fn, ms) {
+  const id = setTimeout(fn, ms);
+  timers.push(id);
+  return id;
+}
+
+function every(fn, ms) {
+  const id = setInterval(fn, ms);
+  timers.push(id);
+  return id;
+}
+
+function beep(freq, sec, type) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    g.gain.value = 0.08;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + (sec == null ? 0.12 : sec));
+  } catch (e) {}
+}
+
+function sfxOk() { beep(660, .11); later(() => beep(880, .12), 110); }
+function sfxBad() { beep(200, .2, 'triangle'); }
+function sfxLove() { beep(700, .1); later(() => beep(920, .12), 90); }
+function sfxWin() {
+  [523,659,784,1046].forEach((f,i) => later(() => beep(f, .12), i * 120));
+}
+function sfxFriend() { beep(784, .12); later(() => beep(1046, .14), 150); }
+function sfxGift() {
+  [784,988,1175].forEach((f,i) => later(() => beep(f, .12), i * 130));
+}
+function sfxTick() { beep(300, .06, 'square'); }
+function sfxDrum() { beep(140, .1, 'triangle'); }
+
+function speak(text) {
+  try {
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text));
+    u.lang = 'zh-HK';
+    u.rate = .85;
+    u.pitch = 1.3;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+function animalName(i) {
+  const n = save.names[i];
+  return (n && String(n).trim()) ? String(n).trim().slice(0, 6) : ANIMAL_NAMES[i];
+}
+
+/** 難度跟對決強度一致：索引愈大愈難（反應／命中／連勝目標）。 */
+function difficultyLabel(i) {
+  const idx = Math.max(0, Math.min(9, i|0));
+  if (idx <= 1) return '簡單';
+  if (idx <= 4) return '中等';
+  if (idx <= 7) return '困難';
+  return '超強';
+}
+
+function animalSVG(index, size) {
+  const i = index|0;
+  const w = size || 60;
+  const h = w * 1.1;
+  const P = [
+    {b:'#d9a066',h:'#e8b980',v:'#fff1dc',l:null,ear:'flop',tail:'curl',feat:'dog'},
+    {b:'#f4a259',h:'#f6b172',v:'#fff1dc',l:null,ear:'point',tail:'long',feat:'cat'},
+    {b:'#f1ece6',h:'#fbf8f4',v:'#fff',l:null,ear:'long',tail:'puff',feat:'bunny'},
+    {b:'#fff',h:'#fff',v:'#fff',l:'#2b2b3a',ear:'roundB',tail:'none',feat:'panda'},
+    {b:'#f07b2d',h:'#f58a3c',v:'#fff',l:'#2b2b3a',ear:'pointB',tail:'fox',feat:'fox'},
+    {b:'#5bc46a',h:'#6ed07b',v:'#e6f7b8',l:null,ear:'none',tail:'none',feat:'frog'},
+    {b:'#a8693a',h:'#b97a48',v:'#f1d1a8',l:null,ear:'round',tail:'long',feat:'monkey'},
+    {b:'#e9b23c',h:'#f2c453',v:'#fbe4a8',l:null,ear:'round',tail:'tuft',feat:'lion'},
+    {b:'#f4a53a',h:'#f7b04a',v:'#fff',l:null,ear:'round',tail:'tuftB',feat:'tiger'},
+    {b:'#2f3b5c',h:'#2f3b5c',v:'#fff',l:null,ear:'none',tail:'none',feat:'penguin'}
+  ][i] || P0();
+  function P0(){return {b:'#d9a066',h:'#e8b980',v:'#fff1dc',l:null,ear:'flop',tail:'curl',feat:'dog'};}
+  const leg = P.l || P.b;
+  let g = '';
+  // tail
+  if (P.tail === 'curl') g += `<path d="M72 78 q18 2 14 18 q-2 8 -10 4" fill="none" stroke="${P.b}" stroke-width="7" stroke-linecap="round"/>`;
+  if (P.tail === 'long') g += `<path d="M72 72 q22 -20 18 10" fill="none" stroke="${P.b}" stroke-width="6" stroke-linecap="round"/>`;
+  if (P.tail === 'puff') g += `<circle cx="74" cy="86" r="7" fill="#fff"/>`;
+  if (P.tail === 'fox') g += `<path d="M72 74 q24 -8 20 16 q-8 2 -16 -4z" fill="${P.b}"/><circle cx="90" cy="88" r="5" fill="#fff"/>`;
+  if (P.tail === 'tuft') g += `<path d="M72 74 q20 4 16 18" fill="none" stroke="${P.b}" stroke-width="5" stroke-linecap="round"/><circle cx="88" cy="92" r="5" fill="#b5762c"/>`;
+  if (P.tail === 'tuftB') g += `<path d="M72 74 q20 4 16 18" fill="none" stroke="${P.b}" stroke-width="5" stroke-linecap="round"/><circle cx="88" cy="92" r="5" fill="#2b2b3a"/>`;
+  // lion mane
+  if (P.feat === 'lion') {
+    g += `<circle cx="50" cy="42" r="30" fill="#b5762c"/>`;
+    for (let a=0;a<8;a++) {
+      const ang = a * Math.PI/4;
+      g += `<circle cx="${50+Math.cos(ang)*28}" cy="${42+Math.sin(ang)*28}" r="8" fill="#b5762c"/>`;
+    }
+  }
+  // ears
+  if (P.ear === 'point') g += `<polygon points="32,28 28,8 44,22" fill="${P.h}"/><polygon points="68,28 72,8 56,22" fill="${P.h}"/>`;
+  if (P.ear === 'pointB') g += `<polygon points="32,28 28,8 44,22" fill="#2b2b3a"/><polygon points="68,28 72,8 56,22" fill="#2b2b3a"/><polygon points="33,24 31,12 42,20" fill="${P.h}"/><polygon points="67,24 69,12 58,20" fill="${P.h}"/>`;
+  if (P.ear === 'long') g += `<ellipse cx="34" cy="14" rx="9" ry="18" fill="${P.h}"/><ellipse cx="66" cy="14" rx="9" ry="18" fill="${P.h}"/><ellipse cx="34" cy="14" rx="5" ry="12" fill="#ffb6c8"/><ellipse cx="66" cy="14" rx="5" ry="12" fill="#ffb6c8"/>`;
+  if (P.ear === 'round') g += `<circle cx="30" cy="26" r="9" fill="${P.h}"/><circle cx="70" cy="26" r="9" fill="${P.h}"/>`;
+  if (P.ear === 'roundB') g += `<circle cx="30" cy="26" r="10" fill="#2b2b3a"/><circle cx="70" cy="26" r="10" fill="#2b2b3a"/>`;
+  // frog eyes bumps
+  if (P.feat === 'frog') g += `<circle cx="36" cy="28" r="12" fill="${P.h}"/><circle cx="64" cy="28" r="12" fill="${P.h}"/>`;
+  // feet
+  if (P.feat === 'penguin') {
+    g += `<ellipse cx="38" cy="103" rx="12" ry="5" fill="#f07b2d"/><ellipse cx="62" cy="103" rx="12" ry="5" fill="#f07b2d"/>`;
+  } else {
+    g += `<ellipse cx="38" cy="101" rx="11" ry="6" fill="${leg}"/><ellipse cx="62" cy="101" rx="11" ry="6" fill="${leg}"/>`;
+  }
+  // body
+  g += `<ellipse cx="50" cy="76" rx="23" ry="25" fill="${P.b}"/>`;
+  // belly
+  g += `<ellipse cx="50" cy="80" rx="14" ry="17" fill="${P.v}"/>`;
+  // tiger stripes on body
+  if (P.feat === 'tiger') {
+    g += `<path d="M38 68 q4 6 0 12" fill="none" stroke="#2b2b3a" stroke-width="3"/><path d="M50 66 q0 8 0 14" fill="none" stroke="#2b2b3a" stroke-width="3"/><path d="M62 68 q-4 6 0 12" fill="none" stroke="#2b2b3a" stroke-width="3"/>`;
+  }
+  // arms
+  g += `<ellipse cx="28" cy="74" rx="8" ry="14" fill="${leg}" transform="rotate(-12 28 74)"/><ellipse cx="72" cy="74" rx="8" ry="14" fill="${leg}" transform="rotate(12 72 74)"/>`;
+  // head
+  g += `<circle cx="50" cy="42" r="22" fill="${P.h}"/>`;
+  // dog flop ears over head
+  if (P.ear === 'flop') {
+    g += `<ellipse cx="28" cy="48" rx="9" ry="14" fill="#8a5a2b" transform="rotate(-18 28 48)"/><ellipse cx="72" cy="48" rx="9" ry="14" fill="#8a5a2b" transform="rotate(18 72 48)"/>`;
+  }
+  // face details
+  if (P.feat === 'dog') {
+    g += `<ellipse cx="50" cy="48" rx="10" ry="8" fill="#fff"/>`;
+  }
+  if (P.feat === 'fox') {
+    g += `<ellipse cx="40" cy="48" rx="8" ry="7" fill="#fff"/><ellipse cx="60" cy="48" rx="8" ry="7" fill="#fff"/>`;
+  }
+  if (P.feat === 'monkey') {
+    g += `<ellipse cx="50" cy="48" rx="14" ry="12" fill="${P.v}"/>`;
+  }
+  if (P.feat === 'penguin') {
+    g += `<ellipse cx="50" cy="46" rx="14" ry="13" fill="#fff"/>`;
+  }
+  if (P.feat === 'panda') {
+    g += `<ellipse cx="38" cy="42" rx="9" ry="8" fill="#2b2b3a"/><ellipse cx="62" cy="42" rx="9" ry="8" fill="#2b2b3a"/>`;
+  }
+  if (P.feat === 'tiger') {
+    g += `<path d="M50 26 v10" stroke="#2b2b3a" stroke-width="3"/><path d="M42 30 q8 4 16 0" fill="none" stroke="#2b2b3a" stroke-width="2.5"/>`;
+  }
+  // eyes
+  if (P.feat === 'frog') {
+    g += `<circle cx="36" cy="26" r="5" fill="#2b2b3a"/><circle cx="64" cy="26" r="5" fill="#2b2b3a"/><circle cx="37.5" cy="24.5" r="1.6" fill="#fff"/><circle cx="65.5" cy="24.5" r="1.6" fill="#fff"/>`;
+  } else if (P.feat === 'panda') {
+    g += `<circle cx="38" cy="42" r="3.2" fill="#fff"/><circle cx="62" cy="42" r="3.2" fill="#fff"/><circle cx="38.5" cy="41.2" r="1.2" fill="#2b2b3a"/><circle cx="62.5" cy="41.2" r="1.2" fill="#2b2b3a"/>`;
+  } else {
+    g += `<circle cx="42" cy="40" r="3.2" fill="#2b2b3a"/><circle cx="58" cy="40" r="3.2" fill="#2b2b3a"/><circle cx="43.2" cy="38.8" r="1.1" fill="#fff"/><circle cx="59.2" cy="38.8" r="1.1" fill="#fff"/>`;
+  }
+  // blush
+  g += `<circle cx="36" cy="50" r="4" fill="#ff9aa8" opacity=".65"/><circle cx="64" cy="50" r="4" fill="#ff9aa8" opacity=".65"/>`;
+  // nose / mouth
+  if (P.feat === 'bunny') {
+    g += `<ellipse cx="50" cy="48" rx="3" ry="2.2" fill="#ff8fab"/>`;
+  } else if (P.feat === 'penguin') {
+    g += `<polygon points="50,46 44,52 56,52" fill="#f07b2d"/>`;
+  } else if (P.feat === 'frog') {
+    g += `<path d="M34 48 q16 14 32 0" fill="none" stroke="#2b2b3a" stroke-width="3" stroke-linecap="round"/>`;
+  } else {
+    g += `<ellipse cx="50" cy="48" rx="2.6" ry="2" fill="#2b2b3a"/>`;
+  }
+  if (P.feat !== 'frog' && P.feat !== 'penguin') {
+    g += `<path d="M44 54 q6 5 12 0" fill="none" stroke="#2b2b3a" stroke-width="2" stroke-linecap="round"/>`;
+  }
+  if (P.feat === 'cat') {
+    g += `<path d="M22 46 h12 M22 50 h12 M66 46 h12 M66 50 h12" stroke="#2b2b3a" stroke-width="1.5"/>`;
+  }
+  return `<svg viewBox="0 0 100 110" width="${w}" height="${h}" overflow="visible" aria-hidden="true">${g}</svg>`;
+}
+
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+
+function yesterdayKey() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+
+function daily() {
+  const t = todayKey();
+  if (save.day.d === t) return;
+  const y = yesterdayKey();
+  const streak = (save.day.d === y) ? (save.day.streak || 0) + 1 : 1;
+  save.day = { d: t, streak, p:{round:0,play:0,song:0}, c:{}, signed:false };
+  persist();
+}
+
+function signIn() {
+  daily();
+  if (save.day.signed) return;
+  save.day.signed = true;
+  const m = Math.min(save.day.streak || 1, 5);
+  save.hearts += m;
+  save.earned += m;
+  persist();
+  modal(`今天簽到成功！連續 ${save.day.streak} 天，獲得 ❤️ ${m} 顆`, '📅');
+}
+
+function qp(k) {
+  daily();
+  save.day.p[k] = (save.day.p[k] || 0) + 1;
+  persist();
+}
+
+function gain(n) {
+  save.hearts += n;
+  save.earned += n;
+  persist();
+}
+
+function rec(t, a, ok) {
+  const tt = String(t);
+  if (!save.stat[tt]) save.stat[tt] = {n:0, ok:0};
+  save.stat[tt].n++;
+  if (ok) save.stat[tt].ok++;
+  else {
+    const lo = Math.min(a, t), hi = Math.max(a, t);
+    const k = lo + '×' + hi;
+    save.miss[k] = (save.miss[k] || 0) + 1;
+  }
+  persist();
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i=a.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function randInt(a,b) { return a + Math.floor(Math.random()*(b-a+1)); }
+
+function pickOpts(ans, pool, n) {
+  const cand = shuffle(pool.filter(x => x > 0 && x !== ans));
+  const uniq = [];
+  for (const x of cand) {
+    if (!uniq.includes(x)) uniq.push(x);
+    if (uniq.length >= n) break;
+  }
+  let v = 2;
+  while (uniq.length < n) {
+    const x = ans + v;
+    if (x > 0 && x !== ans && !uniq.includes(x)) uniq.push(x);
+    v = v > 0 ? -v : -v + 1;
+  }
+  return shuffle([ans, ...uniq.slice(0,n)]);
+}
+
+function practiceOpts(ans, a, t) {
+  return pickOpts(ans, [ans+t, ans-t, ans+1, ans-1, ans+2, a+t, ans+10], 3);
+}
+
+function timedOpts(ans, a, t) {
+  return pickOpts(ans, [ans+t, ans-t, ans+a, ans-a, ans+1, ans-1, ans+10], 3);
+}
+
+function cn(p) {
+  if (p === 10) return '一十';
+  if (p < 10) return D[p-1];
+  if (p < 20) return '十' + D[p%10-1];
+  return D[Math.floor(p/10)-1] + '十' + (p%10 ? D[p%10-1] : '');
+}
+
+function line(a,b) {
+  return D[a-1] + D[b-1] + (a*b < 10 ? '得' : '') + cn(a*b);
+}
+
+function songLine(t,b) {
+  return line(Math.min(t,b), Math.max(t,b));
+}
+
+function maxT() {
+  const n = Object.keys(save.stat).filter(k => (save.stat[k]||{}).n > 0).length;
+  return Math.min(9, Math.max(4, 3 + n));
+}
+
+function modal(htmlOrText, emoji, btnLabel, onOk) {
+  const m = document.getElementById('modal');
+  const label = btnLabel || '好';
+  m.innerHTML = `<div class="modal-card">
+    ${emoji ? `<div class="modal-emoji">${emoji}</div>` : ''}
+    <div id="modal-title" class="fw9" style="font-size:1.15rem;margin-bottom:14px">${htmlOrText}</div>
+    <button type="button" class="pri block" id="modal-ok">${esc(label)}</button>
+  </div>`;
+  m.classList.add('show');
+  document.getElementById('modal-ok').onclick = () => {
+    m.classList.remove('show');
+    m.innerHTML = '';
+    if (onOk) onOk();
+  };
+}
+
+function checkGift(animalIdx) {
+  while (Math.floor(save.earned / 10) > save.gifts.length) {
+    const g = GIFTS[save.gifts.length % 10];
+    save.gifts.push(g);
+    persist();
+    const name = animalName(animalIdx);
+    const gift = g;
+    later(() => {
+      sfxGift();
+      modal(esc(name) + '送你一份禮物！愛心又滿 10 顆啦！', gift);
+    }, 700);
+  }
+}
+
+function love(el, n, animalIdx) {
+  save.hearts += n;
+  save.earned += n;
+  persist();
+  sfxLove();
+  if (el) {
+    el.classList.remove('hop');
+    void el.offsetWidth;
+    el.classList.add('hop');
+    const wrap = el.closest('.animal-slot') || el.parentElement || el;
+    const host = wrap.style ? wrap : el;
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    const h = document.createElement('div');
+    h.className = 'float-heart';
+    h.textContent = '❤️';
+    host.appendChild(h);
+    later(() => h.remove(), 900);
+  }
+  const heartsEl = document.getElementById('hearts-num');
+  const giftProg = document.getElementById('gift-prog');
+  if (heartsEl) heartsEl.textContent = String(save.hearts);
+  if (giftProg) giftProg.textContent = String(save.earned % 10);
+  checkGift(animalIdx == null ? 0 : animalIdx);
+}
+
+function go(name, arg1, arg2, arg3) {
+  clearTimers();
+  screen = name;
+  const app = document.getElementById('app');
+  const map = {
+    home: renderHome,
+    hero: renderHero,
+    practice: () => renderPractice(arg1),
+    result: () => renderResult(arg1, arg2),
+    island: renderIsland,
+    songMenu: renderSongMenu,
+    song: () => renderSong(arg1),
+    timed: renderTimed,
+    daily: renderDaily,
+    parentGate: renderParentGate,
+    parent: renderParent,
+    battleMenu: () => renderBattleMenu(arg1),
+    battle: () => startBattle(arg1, arg2),
+    streak: () => startStreak(arg1)
+  };
+  (map[name] || renderHome)();
+}
+
+function backHomeBtn() {
+  return `<button type="button" class="block mt" data-go="home">回首頁</button>`;
+}
+
+function bindNav(root) {
+  root.querySelectorAll('[data-go]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const g = btn.getAttribute('data-go');
+      if (g === 'practice') go('practice', Number(btn.getAttribute('data-t')));
+      else if (g === 'song') go('song', Number(btn.getAttribute('data-t')));
+      else if (g === 'battleMenu') go('battleMenu', Number(btn.getAttribute('data-i')));
+      else if (g === 'battle') go('battle', Number(btn.getAttribute('data-i')), btn.getAttribute('data-mode'));
+      else if (g === 'streak') go('streak', Number(btn.getAttribute('data-i')));
+      else go(g);
+    });
+  });
+}
+
+function heroHeader(extraHtml) {
+  return `<div class="row mb">
+    <button type="button" class="hero-btn" data-go="hero" aria-label="換角色">${save.hero}</button>
+    <div class="speech grow">${extraHtml || '我是你的好朋友！點我可以換角色。一起數盤子裡的點心吧！'}</div>
+  </div>`;
+}
+
+function renderHome() {
+  daily();
+  const app = document.getElementById('app');
+  let zooHtml = '';
+  for (let i=0;i<10;i++) {
+    if (i < save.zoo) zooHtml += `<div class="zoo-cell unlocked">${animalSVG(i, 42)}</div>`;
+    else zooHtml += `<div class="zoo-cell" aria-label="未解鎖">❔</div>`;
+  }
+  let tables = '';
+  for (let t=2;t<=9;t++) {
+    const s = save.stars[t] || 0;
+    const stars = s ? '★'.repeat(s) : '☆';
+    tables += `<button type="button" class="table-btn" data-go="practice" data-t="${t}" aria-label="${t} 的乘法表"><span>${t}</span><span class="stars">${stars}</span></button>`;
+  }
+  app.innerHTML = `
+    ${heroHeader()}
+    <div class="card">
+      <h2 class="mb">選一個乘法表</h2>
+      <div class="grid4">${tables}</div>
+    </div>
+    <div class="card">
+      <h2 class="mb">我的小動物朋友 ${save.zoo}/10</h2>
+      <div class="grid5 mb">${zooHtml}</div>
+      <button type="button" class="pri block" data-go="island">🏝️ 去動物小島玩</button>
+    </div>
+    <div class="card">
+      <h2 class="mb">更多玩法</h2>
+      <div class="grid2">
+        <button type="button" data-go="songMenu">🎵 乘法歌</button>
+        <button type="button" data-go="timed">⏱️ 限時挑戰</button>
+        <button type="button" data-go="daily">📅 每日任務</button>
+        <button type="button" data-go="parentGate">👨‍👩‍👧 家長專區</button>
+      </div>
+    </div>`;
+  bindNav(app);
+  signIn();
+}
+
+function renderHero() {
+  const app = document.getElementById('app');
+  let cells = '';
+  HEROES.forEach(h => {
+    cells += `<button type="button" class="hero-btn ${h===save.hero?'selected':''}" data-hero="${h}" aria-label="選擇角色 ${h}">${h}</button>`;
+  });
+  app.innerHTML = `
+    <div class="card">
+      <h2 class="mb">揀你的角色</h2>
+      <div class="grid4">${cells}</div>
+      ${backHomeBtn()}
+    </div>`;
+  app.querySelectorAll('[data-hero]').forEach(btn => {
+    btn.onclick = () => {
+      save.hero = btn.getAttribute('data-hero');
+      persist();
+      beep(660, .1);
+      go('home');
+    };
+  });
+  bindNav(app);
+}
+
+function renderPractice(t) {
+  fed = 0;
+  let q = 0, ok = 0, lastA = -1;
+  const state = { firstTry: true, answered: false };
+
+  function nextA() {
+    let a;
+    do { a = randInt(2,9); } while (a === lastA);
+    lastA = a;
+    return a;
+  }
+
+  function draw() {
+    if (q >= 10) {
+      go('result', t, ok);
+      return;
+    }
+    state.firstTry = true;
+    state.answered = false;
+    const a = nextA();
+    const ans = a * t;
+    const opts = practiceOpts(ans, a, t);
+    const treat = TREATS[randInt(0, TREATS.length-1)];
+    const kind = q < 4 ? 'pic' : (q < 7 ? 'add' : 'mul');
+    let body = '';
+    if (kind === 'pic') {
+      let plates = '';
+      for (let i=0;i<a;i++) {
+        let dots = '';
+        for (let j=0;j<t;j++) dots += `<span>${treat}</span>`;
+        plates += `<div class="plate" aria-hidden="true">${dots}</div>`;
+      }
+      body = `<div class="plates">${plates}</div>
+        <div class="center muted">${a} 盤，每盤 ${t} 個</div>
+        <div class="q-big">${a} × ${t} = ？</div>`;
+    } else if (kind === 'add') {
+      const sum = Array(a).fill(t).join(' + ');
+      body = `<div class="q-big" style="font-size:1.35rem">${sum} = ？</div>
+        <div class="hint">也就是 ${a} × ${t}</div>`;
+    } else {
+      body = `<div class="q-big">${a} × ${t} = ？</div>`;
+    }
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="row between mb">
+        <button type="button" class="hero-btn" data-go="home" aria-label="回首頁">${save.hero}</button>
+        <div class="grow">
+          <div class="row between"><span class="fw9">${t} 的乘法表</span><span>第 ${q+1} / 10 題</span></div>
+          <div class="bar"><i style="width:${q*10}%"></i></div>
+        </div>
+      </div>
+      <div class="card">
+        ${body}
+        <div class="hint" id="prac-hint" hidden></div>
+        <div class="grid2 mt" id="opts"></div>
+      </div>`;
+    const box = document.getElementById('opts');
+    opts.forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(v);
+      b.onclick = () => onAns(b, v, ans, a, kind);
+      box.appendChild(b);
+    });
+    bindNav(app);
+  }
+
+  function onAns(btn, v, ans, a, kind) {
+    if (state.answered) return;
+    if (state.firstTry) {
+      rec(t, a, v === ans);
+      if (v === ans) ok++;
+      state.firstTry = false;
+    }
+    if (v === ans) {
+      state.answered = true;
+      btn.classList.add('ok-btn');
+      sfxOk();
+      const hero = document.querySelector('.hero-btn');
+      if (hero) { hero.classList.remove('hop'); void hero.offsetWidth; hero.classList.add('hop'); }
+      speak('好好吃！答對了！');
+      fed++;
+      if (fed % 5 === 0 && save.zoo < 10) {
+        save.zoo++;
+        persist();
+        sfxFriend();
+        const ni = save.zoo - 1;
+        modal('新朋友加入小島了！', animalSVG(ni, 90));
+      }
+      later(() => { q++; draw(); }, 900);
+    } else {
+      btn.classList.add('bad-btn', 'shake');
+      btn.disabled = true;
+      sfxBad();
+      speak('差一點，再數數看！');
+      const hint = document.getElementById('prac-hint');
+      const add = Array(a).fill(t).join(' + ');
+      hint.hidden = false;
+      hint.textContent = kind === 'pic'
+        ? `每盤 ${t} 個：${add}`
+        : `試試看：${add}`;
+    }
+  }
+
+  draw();
+}
+
+function renderResult(t, ok) {
+  let stars = 0;
+  if (ok >= 9) stars = 3;
+  else if (ok >= 6) stars = 2;
+  else if (ok >= 3) stars = 1;
+  const prev = save.stars[t] || 0;
+  if (stars > prev) { save.stars[t] = stars; persist(); }
+  qp('round');
+  let msg = '繼續加油，乘乘陪你練習！';
+  if (stars === 3) msg = '你是乘法小天才！';
+  else if (stars === 2) msg = '很厲害，再挑戰一次拿三顆星！';
+  const starShow = stars ? '★'.repeat(stars) : '🌱';
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="card center">
+      <div style="font-size:2.4rem;margin:8px 0">${starShow}</div>
+      <h2>${esc(msg)}</h2>
+      <p class="mt">一次就答對 ${ok} / 10 題</p>
+      <div class="grid2 mt">
+        <button type="button" class="pri" data-go="practice" data-t="${t}">再玩一次</button>
+        <button type="button" data-go="home">回首頁</button>
+      </div>
+    </div>`;
+  bindNav(app);
+}
+
+function renderIsland() {
+  const app = document.getElementById('app');
+  let animals = '';
+  for (let i=0;i<save.zoo;i++) {
+    const left = 15 + (i % 5) * 14;
+    const top = 22 + Math.floor(i / 5) * 34;
+    animals += `<button type="button" class="animal-btn animal-slot" data-i="${i}" style="left:${left}%;top:${top}%" aria-label="${esc(animalName(i))}">
+      <span class="bob-wrap">${animalSVG(i, 60)}</span>
+    </button>`;
+  }
+  let fixed = FIXED_DECOS.map(d => `<span class="island-deco" style="left:${d.l};top:${d.t}">${d.e}</span>`).join('');
+  let bought = save.decos.map(e => {
+    const d = DECOS.find(x => x.e === e);
+    if (!d) return '';
+    return `<span class="island-deco" style="left:${d.l};top:${d.t};font-size:1.8rem">${d.e}</span>`;
+  }).join('');
+
+  app.innerHTML = `
+    ${heroHeader(`❤️ <span id="hearts-num">${save.hearts}</span>　　🎁 <span id="gift-prog">${save.earned % 10}</span> / 10 顆愛心送禮物`)}
+    <div class="island" id="island">${fixed}${bought}${animals}</div>
+    <div class="grid2 mb">
+      <button type="button" id="btn-shop">🛒 裝飾店</button>
+      <button type="button" id="btn-gifts">🎁 禮物箱（${save.gifts.length}）</button>
+    </div>
+    <div class="card panel-card" id="panel"><p class="muted center">點一隻動物來玩玩吧！</p></div>
+    ${backHomeBtn()}`;
+
+  bindNav(app);
+
+  every(() => {
+    const btns = [...document.querySelectorAll('.animal-btn')];
+    if (!btns.length) return;
+    const b = btns[randInt(0, btns.length-1)];
+    b.style.left = randInt(4, 82) + '%';
+    b.style.top = randInt(8, 78) + '%';
+  }, 1800);
+
+  function showPanel(i) {
+    const panel = document.getElementById('panel');
+    const name = animalName(i);
+    const diff = difficultyLabel(i);
+    panel.innerHTML = `
+      <div class="center mb">${animalSVG(i, 92)}</div>
+      <h3 class="center mb">${esc(name)}</h3>
+      <p class="center muted mb">對決難度：<span class="fw9" style="color:var(--pri)">${esc(diff)}</span></p>
+      <div class="grid2">
+        <button type="button" id="p-love">🤗 摸摸</button>
+        <button type="button" id="p-feed">🍎 餵食</button>
+        <button type="button" id="p-battle" data-go="battleMenu" data-i="${i}">⚔️ 對決</button>
+        <button type="button" id="p-name">✏️ 取名</button>
+      </div>
+      <div id="name-box" class="mt" hidden>
+        <input type="text" maxlength="6" aria-label="動物名字" id="name-input" value="${esc(name)}">
+        <button type="button" class="pri block mt" id="name-ok">好</button>
+      </div>`;
+    const el = document.querySelector(`.animal-btn[data-i="${i}"]`);
+    document.getElementById('p-love').onclick = () => {
+      love(el, 1, i);
+      speak(ANIMAL_SOUNDS[i] + ' 好舒服～');
+    };
+    document.getElementById('p-feed').onclick = () => {
+      const treat = TREATS[randInt(0, TREATS.length-1)];
+      love(el, 1, i);
+      speak(ANIMAL_SOUNDS[i] + ' 好好吃！' + treat);
+    };
+    document.getElementById('p-name').onclick = () => {
+      document.getElementById('name-box').hidden = false;
+      document.getElementById('name-input').focus();
+    };
+    const applyName = () => {
+      let v = document.getElementById('name-input').value.trim().slice(0,6);
+      if (!v) { delete save.names[i]; }
+      else save.names[i] = v;
+      persist();
+      speak(ANIMAL_SOUNDS[i] + ' 我叫' + animalName(i) + '！');
+      showPanel(i);
+    };
+    document.getElementById('name-ok').onclick = applyName;
+    document.getElementById('name-input').onkeydown = e => { if (e.key === 'Enter') applyName(); };
+    bindNav(panel);
+  }
+
+  app.querySelectorAll('.animal-btn').forEach(btn => {
+    btn.onclick = () => showPanel(Number(btn.getAttribute('data-i')));
+  });
+
+  document.getElementById('btn-gifts').onclick = () => {
+    const panel = document.getElementById('panel');
+    if (!save.gifts.length) {
+      panel.innerHTML = `<div class="center"><div style="font-size:2.5rem">📦</div><p>陪動物玩，每得到 10 顆愛心就會收到禮物！</p></div>`;
+    } else {
+      panel.innerHTML = `<h3 class="mb">禮物箱</h3><div style="font-size:2rem;line-height:1.6">${save.gifts.map(esc).join(' ')}</div>`;
+    }
+  };
+
+  document.getElementById('btn-shop').onclick = () => {
+    const panel = document.getElementById('panel');
+    let cells = '';
+    DECOS.forEach(d => {
+      const owned = save.decos.includes(d.e);
+      cells += `<button type="button" class="table-btn" data-buy="${d.e}" ${owned?'disabled':''} aria-label="購買 ${d.e}">
+        <span style="font-size:1.6rem">${d.e}</span>
+        <span class="tiny">${owned ? '已擁有' : '❤️ '+d.c}</span>
+      </button>`;
+    });
+    panel.innerHTML = `<h3 class="mb">裝飾店　❤️ ${save.hearts}</h3><div class="grid3">${cells}</div>`;
+    panel.querySelectorAll('[data-buy]').forEach(btn => {
+      btn.onclick = () => {
+        const e = btn.getAttribute('data-buy');
+        const d = DECOS.find(x => x.e === e);
+        if (!d || save.decos.includes(e)) return;
+        if (save.hearts < d.c) {
+          speak('還差 ' + (d.c - save.hearts) + ' 顆愛心，去陪動物玩吧！');
+          sfxBad();
+          return;
+        }
+        save.hearts -= d.c;
+        save.decos.push(e);
+        persist();
+        beep(660,.1);
+        go('island');
+      };
+    });
+  };
+}
+
+function renderBattleMenu(i) {
+  const name = animalName(i);
+  const diff = difficultyLabel(i);
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="card center">
+      <div class="mb">${animalSVG(i, 90)}</div>
+      <h2 class="mb">${esc(name)}要跟你對決！</h2>
+      <p class="muted mb">對決難度：<span class="fw9" style="color:var(--pri)">${esc(diff)}</span></p>
+      <div class="grid2">
+        <button type="button" data-go="battle" data-i="${i}" data-mode="fast">⚡ 快答對決</button>
+        <button type="button" data-go="battle" data-i="${i}" data-mode="miss">🧩 填空對決</button>
+        <button type="button" data-go="battle" data-i="${i}" data-mode="rev">🔁 反向對決</button>
+        <button type="button" data-go="streak" data-i="${i}">🔥 連勝賽</button>
+      </div>
+      <button type="button" class="block mt" data-go="island">返回</button>
+    </div>`;
+  bindNav(app);
+}
+
+function makeBattleQ(mode) {
+  const a = randInt(2,9);
+  const t = randInt(2, maxT());
+  const ans = a * t;
+  if (mode === 'fast') {
+    const opts = pickOpts(ans, [ans+t, ans-t, ans+1, ans-1, ans+a, a+t], 2);
+    return { prompt: `${a} × ${t} = ？`, answer: ans, opts, a, t, recOk: (v)=>v===ans };
+  }
+  if (mode === 'miss') {
+    const pool = [t+1,t-1,t+2,t-2,a].filter(x => x>=2 && x<=10 && x!==t);
+    const extras = shuffle([...new Set(pool)]).slice(0,2);
+    const opts = shuffle([t, ...extras]);
+    return { prompt: `${a} × ？ = ${ans}`, answer: t, opts, a, t, recOk: (v)=>v===t };
+  }
+  // rev
+  const opts = shuffle([`${a} × ${t}`, `${a} × ${t+1}`, `${a+1} × ${t}`]);
+  return { prompt: `哪一個等於 ${ans}？`, answer: `${a} × ${t}`, opts, a, t, recOk: (v)=>v===`${a} × ${t}` };
+}
+
+function startBattle(i, mode) {
+  battleAlive = true;
+  let ks = 0, as = 0, r = 0;
+  const name = animalName(i);
+  const adBase = () => Math.max(3.2, 6.5 - i * 0.3 + Math.random() * 1.5);
+  const pa = Math.min(0.75, 0.45 + 0.04 * i);
+
+  function endMatch() {
+    if (!battleAlive) return;
+    battleAlive = false;
+    clearTimers();
+    let result = 'lose';
+    if (ks > as) result = 'win';
+    else if (ks === as) result = 'draw';
+    showBattleResult(i, mode, result, false);
+  }
+
+  function nextRound() {
+    if (!battleAlive) return;
+    if (ks >= 3 || as >= 3 || r >= 5) { endMatch(); return; }
+    r++;
+    const q = makeBattleQ(mode);
+    let answered = false;
+    let animalDone = false;
+    const started = Date.now();
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="row between center mb">
+        <div><div style="font-size:2rem">${save.hero}</div><div class="vs-score" id="ks">${ks}</div></div>
+        <div class="fw9">⚔️</div>
+        <div>${animalSVG(i, 54)}<div class="vs-score" id="as">${as}</div></div>
+      </div>
+      <p class="center muted mb">先得 3 分就贏！　第 ${r} 回合</p>
+      <div class="bar timer-bar"><i id="tbar" style="width:100%"></i></div>
+      <div class="card">
+        <div class="q-big" style="font-size:1.6rem">${esc(q.prompt)}</div>
+        <p class="center" id="bmsg"></p>
+        <div class="grid2" id="bopts"></div>
+      </div>
+      <button type="button" class="block mt" data-go="island">返回</button>`;
+    bindNav(app);
+    const box = document.getElementById('bopts');
+    q.opts.forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(v);
+      b.onclick = () => {
+        if (!battleAlive || answered) return;
+        const ok = q.recOk(v);
+        if (stateFirst()) rec(q.t, q.a, ok);
+        if (ok) {
+          answered = true;
+          ks++;
+          document.getElementById('ks').textContent = String(ks);
+          b.classList.add('ok-btn');
+          sfxOk();
+          finishRound();
+        } else {
+          b.classList.add('bad-btn','shake');
+          b.disabled = true;
+          sfxBad();
+        }
+      };
+      box.appendChild(b);
+    });
+    let first = true;
+    function stateFirst() { const f = first; first = false; return f; }
+
+    const ad = adBase();
+    const tick = every(() => {
+      if (!battleAlive || answered) return;
+      const elapsed = (Date.now() - started) / 1000;
+      const left = Math.max(0, 9 - elapsed);
+      const bar = document.getElementById('tbar');
+      if (bar) bar.style.width = (left / 9 * 100) + '%';
+      if (!animalDone && elapsed >= ad) {
+        animalDone = true;
+        if (Math.random() < pa) {
+          answered = true;
+          as++;
+          const asEl = document.getElementById('as');
+          if (asEl) asEl.textContent = String(as);
+          const msg = document.getElementById('bmsg');
+          if (msg) msg.textContent = name + '搶先答對了！';
+          sfxBad();
+          finishRound();
+        } else {
+          const msg = document.getElementById('bmsg');
+          if (msg) msg.textContent = name + '算錯了，快答！';
+        }
+      }
+      if (elapsed >= 9 && !answered) {
+        answered = true;
+        const msg = document.getElementById('bmsg');
+        if (msg) msg.textContent = '時間到！';
+        finishRound();
+      }
+    }, 100);
+
+    function finishRound() {
+      clearInterval(tick);
+      later(() => { if (battleAlive) nextRound(); }, 1300);
+    }
+  }
+
+  nextRound();
+}
+
+function startStreak(i) {
+  battleAlive = true;
+  const name = animalName(i);
+  const S = 3 + Math.floor(i / 3) + randInt(0, 2);
+  let streak = 0;
+  const modes = ['fast','miss','rev'];
+
+  function end(result) {
+    if (!battleAlive) return;
+    battleAlive = false;
+    clearTimers();
+    showBattleResult(i, 'streak', result, true);
+  }
+
+  function nextQ() {
+    if (!battleAlive) return;
+    const mode = modes[randInt(0,2)];
+    const q = makeBattleQ(mode);
+    let answered = false;
+    let first = true;
+    const started = Date.now();
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="row between mb">
+        <div class="fw9">🔥 連勝 ${streak}</div>
+        <div class="muted">${esc(name)} 紀錄 ${S}</div>
+      </div>
+      <div class="bar timer-bar"><i id="tbar" style="width:100%"></i></div>
+      <div class="card">
+        <div class="q-big" style="font-size:1.5rem">${esc(q.prompt)}</div>
+        <div class="grid2" id="bopts"></div>
+      </div>
+      <button type="button" class="block mt" data-go="island">返回</button>`;
+    bindNav(app);
+    document.getElementById('bopts');
+    q.opts.forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(v);
+      b.onclick = () => {
+        if (!battleAlive || answered) return;
+        const ok = q.recOk(v);
+        if (first) { rec(q.t, q.a, ok); first = false; }
+        if (ok) {
+          answered = true;
+          streak++;
+          b.classList.add('ok-btn');
+          sfxOk();
+          if (streak > S) end('win');
+          else later(() => { if (battleAlive) nextQ(); }, 700);
+        } else {
+          b.classList.add('bad-btn','shake');
+          b.disabled = true;
+          sfxBad();
+          answered = true;
+          later(() => end(streak === S ? 'draw' : 'lose'), 600);
+        }
+      };
+      document.getElementById('bopts').appendChild(b);
+    });
+    every(() => {
+      if (!battleAlive || answered) return;
+      const elapsed = (Date.now() - started) / 1000;
+      const bar = document.getElementById('tbar');
+      if (bar) bar.style.width = (Math.max(0, 9 - elapsed) / 9 * 100) + '%';
+      if (elapsed >= 9) {
+        answered = true;
+        later(() => end(streak === S ? 'draw' : 'lose'), 200);
+      }
+    }, 100);
+  }
+  nextQ();
+}
+
+function showBattleResult(i, mode, result, isStreak) {
+  qp('play');
+  const name = animalName(i);
+  const app = document.getElementById('app');
+  let emoji = '', hearts = 0, line = '';
+  if (result === 'win') {
+    hearts = 5; emoji = save.hero + ' 🏆';
+    line = name + '：' + WIN_LINES[randInt(0, WIN_LINES.length-1)];
+    sfxWin();
+  } else if (result === 'draw') {
+    hearts = 2; emoji = '🤝';
+    line = name + '：' + DRAW_LINES[randInt(0, DRAW_LINES.length-1)];
+  } else {
+    hearts = 0; emoji = animalSVG(i, 70) + '<div style="font-size:1.6rem">💪</div>';
+    line = name + '：' + LOSE_LINES[randInt(0, LOSE_LINES.length-1)];
+  }
+  app.innerHTML = `
+    <div class="card center" id="bres">
+      <div class="mb" style="font-size:2.4rem;min-height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column">${emoji}</div>
+      <p class="fw9 mb" id="bline">${esc(line)}</p>
+      <p class="mb">${hearts ? '獲得 ❤️ ' + hearts : '繼續加油！'}</p>
+      <div class="grid2">
+        <button type="button" class="pri" id="again">${isStreak ? '再戰一次' : '再戰一次'}</button>
+        <button type="button" data-go="battleMenu" data-i="${i}">換對決方式</button>
+      </div>
+      <button type="button" class="block mt" data-go="island">返回小島</button>
+    </div>`;
+  if (hearts) {
+    const host = document.getElementById('bres');
+    love(host, hearts, i);
+  }
+  document.getElementById('again').onclick = () => {
+    if (isStreak || mode === 'streak') go('streak', i);
+    else go('battle', i, mode);
+  };
+  bindNav(app);
+}
+
+function renderSongMenu() {
+  const app = document.getElementById('app');
+  let btns = '';
+  for (let t=2;t<=9;t++) btns += `<button type="button" data-go="song" data-t="${t}">${t} 的九因歌</button>`;
+  app.innerHTML = `
+    <div class="card">
+      <h2 class="mb">🎵 乘法歌</h2>
+      <div class="grid2">${btns}</div>
+      ${backHomeBtn()}
+    </div>`;
+  bindNav(app);
+}
+
+function renderSong(t) {
+  hideSongAns = false;
+  let playing = false;
+  let idx = -1;
+  const lines = [];
+  for (let b=1;b<=9;b++) lines.push({b, text: songLine(t,b)});
+
+  function paint() {
+    const app = document.getElementById('app');
+    const custom = save.vids[t];
+    const embed = custom
+      ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(custom)}`
+      : `https://www.youtube-nocookie.com/embed/videoseries?list=PLLiI9RWUM8IPPX9ikiOlWeN-vvSOdTh1L&index=${t-2}`;
+    const ytOpen = custom
+      ? `https://www.youtube.com/watch?v=${encodeURIComponent(custom)}`
+      : 'https://www.youtube.com/playlist?list=PLLiI9RWUM8IPPX9ikiOlWeN-vvSOdTh1L';
+    let rows = lines.map((L,i) => {
+      let cls = 'song-line';
+      if (playing && i === idx) cls += ' active';
+      else if (i < idx || (!playing && i <= idx && idx >= 0)) cls += ' done';
+      if (hideSongAns) cls += ' hide-ans';
+      return `<div class="${cls}" data-li="${i}"><span class="fw9">${t} × ${L.b}</span><span class="lyric">${esc(L.text)}</span></div>`;
+    }).join('');
+
+    app.innerHTML = `
+      <div class="row between mb">
+        <h2>${t} 的九因歌 ${drumPulse?'🥁':''}</h2>
+        <button type="button" id="drum" aria-label="敲鼓">🥁</button>
+      </div>
+      <div class="card">${rows}</div>
+      <div class="grid2 mb">
+        <button type="button" class="pri" id="play">${playing?'■ 停':'▶ 唱'}</button>
+        <button type="button" id="hide">${hideSongAns?'👀 顯示答案':'🙈 遮答案'}</button>
+      </div>
+      <div class="card">
+        <div class="vid-wrap"><iframe src="${embed}" title="九因歌影片" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+        <p class="mt"><a class="link" href="${ytOpen}" target="_blank" rel="noopener">${custom?'在 YouTube 開啟':'在 YouTube 開啟九因歌播放清單'}</a></p>
+        ${custom?`<button type="button" class="block mt" id="rm-vid">移除影片</button>`:''}
+        <div class="mt">
+          <input type="text" id="vid-url" aria-label="YouTube 連結" placeholder="貼上 YouTube 連結">
+          <button type="button" class="pri block mt" id="set-vid">用這條影片</button>
+          <p id="vid-err" class="hint" hidden></p>
+        </div>
+        <p class="mt"><a class="link" href="https://www.youtube.com/results?search_query=${encodeURIComponent(t+' 九因歌')}" target="_blank" rel="noopener">🔎 在 YouTube 找 ${t} 的九因歌</a></p>
+      </div>
+      <button type="button" class="block mt" data-go="songMenu">返回</button>
+      ${backHomeBtn()}`;
+
+    bindNav(app);
+    document.getElementById('drum').onclick = () => {
+      sfxDrum();
+      drumPulse = true;
+      const h = app.querySelector('h2');
+      if (h) { h.classList.remove('hop'); void h.offsetWidth; h.classList.add('hop'); }
+      later(() => { drumPulse = false; }, 300);
+    };
+    document.getElementById('hide').onclick = () => { hideSongAns = !hideSongAns; paint(); };
+    document.getElementById('play').onclick = () => {
+      if (playing) { stopSong(); paint(); }
+      else startSong();
+    };
+    document.getElementById('set-vid').onclick = () => {
+      const url = document.getElementById('vid-url').value.trim();
+      const m = url.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);
+      const err = document.getElementById('vid-err');
+      if (!m) {
+        err.hidden = false;
+        err.textContent = '找不到影片，請貼上完整的 YouTube 連結';
+        return;
+      }
+      save.vids[t] = m[1];
+      persist();
+      paint();
+    };
+    const rm = document.getElementById('rm-vid');
+    if (rm) rm.onclick = () => { delete save.vids[t]; persist(); paint(); };
+  }
+
+  function stopSong() {
+    playing = false;
+    try { speechSynthesis.cancel(); } catch(e){}
+    // keep idx
+    clearTimers();
+  }
+
+  function startSong() {
+    playing = true;
+    if (idx < 0 || idx >= 9) idx = -1;
+    paint();
+    function step() {
+      if (!playing || screen !== 'song') return;
+      idx++;
+      if (idx >= 9) {
+        playing = false;
+        qp('song');
+        paint();
+        sfxWin();
+        return;
+      }
+      paint();
+      sfxTick();
+      speak(lines[idx].text);
+      later(step, 2300);
+    }
+    step();
+  }
+
+  paint();
+}
+
+function renderTimed() {
+  let score = 0;
+  let left = 60;
+  let alive = true;
+  const startedBest = save.best;
+
+  function ask() {
+    if (!alive) return;
+    const a = randInt(2,9), t = randInt(2,9), ans = a*t;
+    const opts = timedOpts(ans, a, t);
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="row between mb">
+        <div class="fw9">⭐ ${score}</div>
+        <div class="fw9" id="sec">${Math.ceil(left)} 秒</div>
+      </div>
+      <div class="bar timer-bar"><i id="tbar" style="width:${(left/60)*100}%"></i></div>
+      <div class="card">
+        <div class="q-big">${a} × ${t} = ？</div>
+        <div class="grid2" id="opts"></div>
+      </div>
+      ${backHomeBtn()}`;
+    bindNav(app);
+    document.getElementById('opts');
+    let first = true;
+    opts.forEach(v => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = String(v);
+      b.onclick = () => {
+        if (!alive) return;
+        if (first) { rec(t, a, v===ans); first = false; }
+        if (v === ans) { score++; sfxOk(); }
+        else sfxBad();
+        ask();
+      };
+      document.getElementById('opts').appendChild(b);
+    });
+  }
+
+  every(() => {
+    if (!alive) return;
+    left -= 0.1;
+    const sec = document.getElementById('sec');
+    const bar = document.getElementById('tbar');
+    if (sec) sec.textContent = Math.max(0, Math.ceil(left)) + ' 秒';
+    if (bar) bar.style.width = (Math.max(0,left)/60*100) + '%';
+    if (left <= 0) {
+      alive = false;
+      clearTimers();
+      const isNew = score > save.best;
+      if (isNew) save.best = score;
+      gain(score);
+      qp('song');
+      persist();
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="card center">
+          <h2>${isNew ? '新紀錄！' : '時間到！'}</h2>
+          <p class="mt">分數：${score}</p>
+          <p>最佳：${save.best}</p>
+          <p>獲得 ❤️ ${score}</p>
+          <div class="grid2 mt">
+            <button type="button" class="pri" data-go="timed">再挑戰</button>
+            <button type="button" data-go="home">回首頁</button>
+          </div>
+        </div>`;
+      bindNav(app);
+    }
+  }, 100);
+
+  ask();
+}
+
+function renderDaily() {
+  daily();
+  const tasks = [
+    {k:'round', label:'完成 1 輪乘法練習', goal:1},
+    {k:'play', label:'與動物乘法對決 1 次', goal:1},
+    {k:'song', label:'唱一遍乘法歌或玩一次限時挑戰', goal:1}
+  ];
+  let rows = tasks.map(tk => {
+    const prog = save.day.p[tk.k] || 0;
+    const claimed = !!(save.day.c && save.day.c[tk.k]);
+    const ready = prog >= tk.goal;
+    let btn;
+    if (claimed) btn = `<button type="button" disabled>已領取</button>`;
+    else if (ready) btn = `<button type="button" class="pri" data-claim="${tk.k}">領取 ❤️ 3</button>`;
+    else btn = `<button type="button" disabled>進度 ${Math.min(prog,tk.goal)}/${tk.goal}</button>`;
+    return `<div class="card"><div class="fw9 mb">${esc(tk.label)}</div>${btn}</div>`;
+  }).join('');
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="card">
+      <h2>📅 每日任務</h2>
+      <p class="muted">連續簽到 ${save.day.streak} 天　❤️ ${save.hearts}</p>
+    </div>
+    ${rows}
+    ${backHomeBtn()}`;
+  bindNav(app);
+  app.querySelectorAll('[data-claim]').forEach(btn => {
+    btn.onclick = () => {
+      const k = btn.getAttribute('data-claim');
+      if (save.day.c[k]) return;
+      if ((save.day.p[k]||0) < 1) return;
+      save.day.c[k] = true;
+      gain(3);
+      beep(700,.1);
+      go('daily');
+    };
+  });
+}
+
+function renderParentGate() {
+  const B = randInt(10, 99);
+  const q = randInt(Math.ceil(100 / B), Math.floor(999 / B));
+  const A = q * B;
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="card">
+      <h2 class="mb">家長專區</h2>
+      <p class="mb">請先回答：${A} ÷ ${B} = ？</p>
+      <input type="number" inputmode="numeric" aria-label="答案" id="gate-ans">
+      <p class="hint" id="gate-err" hidden>答案不對，請再試一次</p>
+      <button type="button" class="pri block mt" id="gate-go">進入</button>
+      ${backHomeBtn()}
+    </div>`;
+  bindNav(app);
+  const goIn = () => {
+    const v = Number(document.getElementById('gate-ans').value);
+    if (v === q) go('parent');
+    else {
+      document.getElementById('gate-err').hidden = false;
+      sfxBad();
+    }
+  };
+  document.getElementById('gate-go').onclick = goIn;
+  document.getElementById('gate-ans').onkeydown = e => { if (e.key === 'Enter') goIn(); };
+}
+
+function renderParent() {
+  const rates = [];
+  for (let t=2;t<=9;t++) {
+    const s = save.stat[t] || {n:0,ok:0};
+    if (s.n >= 3) rates.push({t, n:s.n, pct: Math.round(s.ok / s.n * 100)});
+  }
+  let advice = '再多玩幾輪，就能看出哪個乘法表最弱';
+  if (rates.length) {
+    rates.sort((a,b)=>a.pct-b.pct);
+    const w = rates[0];
+    if (w.pct < 85) advice = `建議先多練習「${w.t}」的乘法表（答對率 ${w.pct}%）`;
+    else advice = '每個乘法表都很穩，可以試試限時挑戰';
+  }
+  let bars = '';
+  for (let t=2;t<=9;t++) {
+    const s = save.stat[t] || {n:0,ok:0};
+    if (!s.n) {
+      bars += `<div class="row mb gap"><span class="fw9" style="width:28px">${t}</span><div class="stat-bar"><i style="width:0"></i></div><span class="tiny muted">未練習</span></div>`;
+    } else {
+      const pct = Math.round(s.ok / s.n * 100);
+      const cls = pct < 60 ? 'red' : (pct < 85 ? 'orange' : 'green');
+      bars += `<div class="row mb gap"><span class="fw9" style="width:28px">${t}</span><div class="stat-bar ${cls}"><i style="width:${pct}%"></i></div><span class="tiny">${pct}%（${s.n} 題）</span></div>`;
+    }
+  }
+  const missList = Object.keys(save.miss).map(k => ({k, n: save.miss[k]})).sort((a,b)=>b.n-a.n).slice(0,5);
+  let missHtml = missList.length
+    ? missList.map(m => `<div>${esc(m.k)}　錯 ${m.n} 次</div>`).join('')
+    : '<p class="muted">目前沒有錯題紀錄</p>';
+
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="card">
+      <h2 class="mb">學習報告</h2>
+      <p class="fw9">${esc(advice)}</p>
+    </div>
+    <div class="card">
+      <h3 class="mb">各表第一次答對率</h3>
+      ${bars}
+    </div>
+    <div class="card">
+      <h3 class="mb">最常答錯</h3>
+      ${missHtml}
+    </div>
+    <p class="muted small center">紀錄只存在這部裝置的瀏覽器。</p>
+    ${backHomeBtn()}`;
+  bindNav(app);
+}
+
+// boot
+loadSave();
+go('home');
+})();
+</script>
+</body>
+</html>
